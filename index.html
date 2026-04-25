@@ -1,0 +1,704 @@
+<!DOCTYPE html>
+<!-- saved from url=(0044)file:///C:/Users/USER/Downloads/index_3.html -->
+<html lang="he" dir="rtl"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ElecPlan — תוכנה לחשמלאים</title>
+<link href="./index_files/css2" rel="stylesheet">
+<style>
+  :root {
+    --navy: #1a2e44;
+    --gold: #f59e0b;
+    --gold-light: #fef3c7;
+    --bg: #f8f7f4;
+    --surface: #ffffff;
+    --border: rgba(0,0,0,0.08);
+    --text: #1a1a1a;
+    --muted: #6b7280;
+    --success-bg: #ecfdf5;
+    --success: #065f46;
+    --danger-bg: #fef2f2;
+    --danger: #991b1b;
+    --radius: 12px;
+    --radius-sm: 8px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Heebo', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+  #config-banner {
+    background: #fff3cd; border-bottom: 1px solid #f59e0b;
+    padding: 10px 20px; font-size: 13px; color: #7c4f00; text-align: center;
+  }
+  #config-banner a { color: #7c4f00; text-decoration: underline; cursor: pointer; }
+
+  .topbar { background: var(--navy); padding: 0 24px; height: 56px; display: flex; align-items: center; gap: 12px; }
+  .logo { width: 32px; height: 32px; background: var(--gold); border-radius: 8px; display: flex; align-items: center; justify-content: center; }
+  .logo svg { width: 18px; height: 18px; }
+  .app-name { font-size: 18px; font-weight: 700; color: #fff; letter-spacing: -0.3px; }
+  .topbar-right { margin-right: auto; }
+  .company-badge { font-size: 12px; color: rgba(255,255,255,0.6); background: rgba(255,255,255,0.08); padding: 4px 12px; border-radius: 20px; }
+
+  .hamburger { display: none; background: none; border: none; cursor: pointer; padding: 6px; margin-right: auto; flex-direction: column; gap: 5px; }
+  .hamburger span { display: block; width: 22px; height: 2px; background: #fff; border-radius: 2px; transition: all 0.25s; }
+  .hamburger.open span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+  .hamburger.open span:nth-child(2) { opacity: 0; }
+  .hamburger.open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+
+  .sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 40; }
+  .sidebar-overlay.open { display: block; }
+
+  .layout { display: flex; min-height: calc(100vh - 56px); }
+  .sidebar { width: 220px; flex-shrink: 0; background: var(--navy); padding: 20px 0; transition: transform 0.25s ease; }
+  .nav-item { display: flex; align-items: center; gap: 10px; padding: 10px 20px; font-size: 14px; color: rgba(255,255,255,0.55); cursor: pointer; transition: all 0.15s; border-right: 3px solid transparent; }
+  .nav-item:hover { color: #fff; background: rgba(255,255,255,0.05); }
+  .nav-item.active { color: #fff; border-right-color: var(--gold); background: rgba(255,255,255,0.07); }
+  .nav-icon { width: 16px; height: 16px; }
+  .main { flex: 1; padding: 28px 32px; overflow-y: auto; }
+
+  @media (max-width: 700px) {
+    .topbar { padding: 0 16px; }
+    .hamburger { display: flex; }
+    .topbar-right .company-badge { display: none; }
+    .sidebar {
+      position: fixed; top: 56px; right: 0; bottom: 0;
+      z-index: 50; transform: translateX(100%);
+      width: 240px; overflow-y: auto;
+    }
+    .sidebar.open { transform: translateX(0); }
+    .main { padding: 18px 16px; }
+    .stats-row { grid-template-columns: 1fr 1fr; }
+    .form-grid { grid-template-columns: 1fr; }
+    .form-group.full { grid-column: 1; }
+  }
+
+  .screen { display: none; }
+  .screen.active { display: block; }
+
+  .page-header { margin-bottom: 24px; }
+  .page-title { font-size: 22px; font-weight: 700; }
+  .page-sub { font-size: 14px; color: var(--muted); margin-top: 2px; }
+
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px 24px; margin-bottom: 16px; }
+  .card-title { font-size: 14px; font-weight: 700; margin-bottom: 14px; }
+
+  .stats-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 20px; }
+  .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px 20px; }
+  .stat-num { font-size: 28px; font-weight: 700; color: var(--navy); }
+  .stat-lbl { font-size: 12px; color: var(--muted); margin-top: 2px; }
+
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .form-group { margin-bottom: 14px; }
+  .form-group.full { grid-column: 1 / -1; }
+  label { font-size: 12px; color: var(--muted); font-weight: 500; display: block; margin-bottom: 5px; }
+  input, select, textarea { width: 100%; border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 9px 12px; font-size: 14px; font-family: 'Heebo', sans-serif; color: var(--text); background: #fafaf9; outline: none; transition: border-color 0.15s; }
+  input:focus, select:focus, textarea:focus { border-color: var(--navy); background: #fff; }
+  textarea { resize: none; line-height: 1.5; }
+
+  .mode-tabs { display: flex; margin-bottom: 20px; border: 1px solid var(--border); border-radius: var(--radius-sm); overflow: hidden; }
+  .mode-tab { flex: 1; padding: 10px; font-size: 13px; font-weight: 500; text-align: center; cursor: pointer; background: var(--bg); color: var(--muted); border: none; font-family: 'Heebo', sans-serif; transition: all 0.15s; }
+  .mode-tab.active { background: var(--navy); color: #fff; }
+
+  .upload-zone { border: 2px dashed var(--border); border-radius: var(--radius); padding: 32px 20px; text-align: center; cursor: pointer; transition: all 0.2s; background: #fafaf9; position: relative; }
+  .upload-zone:hover, .upload-zone.drag { border-color: var(--navy); background: #f0f4f8; }
+  .upload-zone.has-file { border-color: var(--gold); border-style: solid; background: var(--gold-light); }
+  .upload-zone input[type=file] { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
+  .upload-icon { width: 44px; height: 44px; margin: 0 auto 12px; background: #e8edf2; border-radius: 10px; display: flex; align-items: center; justify-content: center; }
+  .upload-icon svg { width: 24px; height: 24px; color: var(--navy); }
+  .upload-title { font-size: 15px; font-weight: 500; margin-bottom: 4px; }
+  .upload-sub { font-size: 13px; color: var(--muted); }
+  .upload-types { display: flex; gap: 8px; justify-content: center; margin-top: 10px; }
+  .type-pill { font-size: 11px; padding: 3px 10px; border-radius: 20px; background: #e8edf2; color: var(--navy); font-weight: 500; }
+
+  .file-preview { display: flex; align-items: center; gap: 12px; background: #fff; border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 10px 14px; margin-top: 12px; text-align: right; }
+  .file-icon { width: 36px; height: 36px; border-radius: 8px; background: var(--navy); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .file-icon svg { width: 18px; height: 18px; color: #fff; }
+  .file-name { font-size: 13px; font-weight: 500; }
+  .file-size { font-size: 12px; color: var(--muted); }
+  .file-remove { margin-right: auto; font-size: 12px; color: var(--danger); cursor: pointer; background: none; border: none; font-family: 'Heebo', sans-serif; padding: 0; }
+  .img-preview { max-width: 100%; max-height: 180px; border-radius: var(--radius-sm); border: 1px solid var(--border); margin-top: 10px; object-fit: contain; display: block; }
+
+  .btn { display: inline-flex; align-items: center; gap: 7px; padding: 10px 20px; border-radius: var(--radius-sm); font-size: 14px; font-weight: 500; font-family: 'Heebo', sans-serif; cursor: pointer; border: none; transition: opacity 0.15s; }
+  .btn:hover { opacity: 0.88; }
+  .btn:disabled { opacity: 0.4; cursor: default; }
+  .btn-primary { background: var(--navy); color: #fff; }
+  .btn-gold { background: var(--gold); color: var(--navy); font-weight: 700; }
+  .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--muted); }
+  .btn-full { width: 100%; justify-content: center; }
+  .btn-sm { padding: 6px 14px; font-size: 13px; }
+
+  .badge { font-size: 11px; padding: 2px 9px; border-radius: 20px; font-weight: 500; display: inline-block; }
+  .badge-success { background: var(--success-bg); color: var(--success); }
+  .badge-gold { background: var(--gold-light); color: #7c4f00; }
+  .badge-navy { background: #e8edf2; color: var(--navy); }
+
+  .proj-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  .proj-table th { text-align: right; font-size: 11px; font-weight: 600; color: var(--muted); padding: 8px 12px; border-bottom: 1px solid var(--border); }
+  .proj-table td { padding: 12px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+  .proj-table tr:last-child td { border-bottom: none; }
+  .proj-table tr:hover td { background: #fafaf9; }
+  .proj-name { font-weight: 500; }
+
+  .ai-result { background: #f0f6ff; border: 1px solid #c3d9f5; border-radius: var(--radius); padding: 18px 20px; font-size: 13px; line-height: 1.85; white-space: pre-wrap; color: var(--text); margin-top: 16px; }
+  .ai-result.loading { color: var(--muted); font-style: italic; }
+  .ai-result.error { background: var(--danger-bg); border-color: #fca5a5; color: var(--danger); }
+
+  .progress-wrap { margin-top: 14px; }
+  .progress-label { font-size: 12px; color: var(--muted); margin-bottom: 6px; display: flex; justify-content: space-between; }
+  .progress-bar { height: 5px; background: #e8edf2; border-radius: 3px; overflow: hidden; }
+  .progress-fill { height: 100%; background: var(--gold); border-radius: 3px; transition: width 0.5s ease; width: 0%; }
+
+  .dots { display: inline-flex; gap: 4px; align-items: center; }
+  .dots span { width: 6px; height: 6px; background: currentColor; border-radius: 50%; animation: blink 1.2s infinite; }
+  .dots span:nth-child(2) { animation-delay: 0.2s; }
+  .dots span:nth-child(3) { animation-delay: 0.4s; }
+  @keyframes blink { 0%,80%,100%{opacity:0.15} 40%{opacity:1} }
+
+  hr { border: none; border-top: 1px solid var(--border); margin: 18px 0; }
+  .empty { text-align: center; padding: 48px 20px; color: var(--muted); font-size: 14px; }
+  .empty-icon { font-size: 32px; margin-bottom: 10px; }
+
+  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 100; align-items: center; justify-content: center; }
+  .modal-overlay.open { display: flex; }
+  .modal { background: #fff; border-radius: var(--radius); padding: 28px 32px; width: 480px; max-width: 95vw; }
+  .modal-title { font-size: 18px; font-weight: 700; margin-bottom: 6px; }
+  .modal-sub { font-size: 13px; color: var(--muted); margin-bottom: 20px; }
+  .modal-footer { display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; }
+</style>
+</head>
+<body>
+
+<div id="config-banner">
+  <strong>הגדרה נדרשת:</strong> <a onclick="openConfig()">הכנס את מפתחות Supabase ו-Claude</a> כדי להתחיל.
+</div>
+
+<div class="topbar">
+  <div class="logo"><svg viewBox="0 0 18 18" fill="none"><path d="M9 1L11 7H17L12.5 10.5L14 17L9 13.5L4 17L5.5 10.5L1 7H7L9 1Z" fill="#1a2e44"></path></svg></div>
+  <span class="app-name">ElecPlan</span>
+  <div class="topbar-right"><span class="company-badge" id="company-name">חברת החשמל שלי</span></div>
+  <button class="hamburger" id="hamburger" onclick="toggleSidebar()" aria-label="תפריט">
+    <span></span><span></span><span></span>
+  </button>
+</div>
+
+<div class="sidebar-overlay" id="sidebar-overlay" onclick="closeSidebar()"></div>
+
+<div class="layout">
+  <div class="sidebar" id="sidebar">
+    <div class="nav-item active" onclick="nav(&#39;dashboard&#39;)">
+      <svg class="nav-icon" viewBox="0 0 16 16" fill="none"><rect x="1" y="1" width="6" height="6" rx="1.5" fill="currentColor"></rect><rect x="9" y="1" width="6" height="6" rx="1.5" fill="currentColor"></rect><rect x="1" y="9" width="6" height="6" rx="1.5" fill="currentColor"></rect><rect x="9" y="9" width="6" height="6" rx="1.5" fill="currentColor"></rect></svg>
+      דשבורד
+    </div>
+    <div class="nav-item" onclick="nav(&#39;projects&#39;)">
+      <svg class="nav-icon" viewBox="0 0 16 16" fill="none"><path d="M2 4h12M2 8h8M2 12h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"></path></svg>
+      פרויקטים
+    </div>
+    <div class="nav-item" onclick="nav(&#39;new-project&#39;)">
+      <svg class="nav-icon" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6.5" stroke="currentColor" stroke-width="1.5"></circle><path d="M8 5v6M5 8h6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"></path></svg>
+      פרויקט חדש
+    </div>
+    <div class="nav-item" onclick="nav(&#39;settings&#39;)">
+      <svg class="nav-icon" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="2.5" stroke="currentColor" stroke-width="1.5"></circle><path d="M8 1v2M8 13v2M1 8h2M13 8h2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"></path></svg>
+      הגדרות
+    </div>
+  </div>
+
+  <div class="main">
+
+    <!-- DASHBOARD -->
+    <div id="screen-dashboard" class="screen active">
+      <div class="page-header"><div class="page-title">דשבורד</div><div class="page-sub">סקירה כללית</div></div>
+      <div class="stats-row">
+        <div class="stat-card"><div class="stat-num" id="stat-total">—</div><div class="stat-lbl">סה"כ פרויקטים</div></div>
+        <div class="stat-card"><div class="stat-num" id="stat-this-month">—</div><div class="stat-lbl">החודש</div></div>
+        <div class="stat-card"><div class="stat-num" id="stat-value">—</div><div class="stat-lbl">שווי כולל (₪)</div></div>
+      </div>
+      <div class="card">
+        <div class="card-title">פרויקטים אחרונים</div>
+        <div id="dash-recent"><div class="empty"><div class="empty-icon">📋</div>אין פרויקטים עדיין</div></div>
+      </div>
+      <button class="btn btn-gold" onclick="nav(&#39;new-project&#39;)">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 2v10M2 7h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path></svg>
+        פרויקט חדש
+      </button>
+    </div>
+
+    <!-- PROJECTS -->
+    <div id="screen-projects" class="screen">
+      <div class="page-header" style="display:flex;justify-content:space-between;align-items:flex-start;">
+        <div><div class="page-title">כל הפרויקטים</div><div class="page-sub">שמורים ב-Supabase</div></div>
+        <button class="btn btn-primary btn-sm" onclick="loadProjects()">רענן</button>
+      </div>
+      <div class="card" style="padding:0;overflow:hidden;">
+        <div id="projects-table-wrap"><div class="empty">טוען...</div></div>
+      </div>
+    </div>
+
+    <!-- NEW PROJECT -->
+    <div id="screen-new-project" class="screen">
+      <div class="page-header"><div class="page-title">פרויקט חדש</div><div class="page-sub">העלה תוכנית בניין — Claude יפיק הכל אוטומטית</div></div>
+      <div class="card">
+
+        <div class="mode-tabs">
+          <button class="mode-tab active" onclick="setMode(&#39;upload&#39;,this)">העלאת תוכנית בניין</button>
+          <button class="mode-tab" onclick="setMode(&#39;manual&#39;,this)">מילוי ידני</button>
+        </div>
+
+        <div class="form-group">
+          <label>שם הפרויקט / לקוח</label>
+          <input id="f-name" type="text" placeholder="דירת כהן — רחוב הרצל 12">
+        </div>
+
+        <!-- UPLOAD MODE -->
+        <div id="mode-upload">
+          <label style="display:block;margin-bottom:8px;">קובץ תוכנית הבניין</label>
+          <div class="upload-zone" id="upload-zone" ondragover="event.preventDefault();this.classList.add(&#39;drag&#39;)" ondragleave="this.classList.remove(&#39;drag&#39;)" ondrop="handleDrop(event)">
+            <input type="file" id="file-input" accept=".pdf,.jpg,.jpeg,.png,.webp" onchange="handleFile(this.files[0])">
+            <div id="upload-placeholder">
+              <div class="upload-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M12 16V8m0 0L9 11m3-3l3 3M3 15v1a4 4 0 004 4h10a4 4 0 004-4v-1"></path></svg>
+              </div>
+              <div class="upload-title">גרור קובץ לכאן או לחץ לבחירה</div>
+              <div class="upload-sub">Claude יקרא את התוכנית ויפיק רשימת חומרים, עלויות ולוח זמנים</div>
+              <div class="upload-types">
+                <span class="type-pill">PDF</span>
+                <span class="type-pill">JPG</span>
+                <span class="type-pill">PNG</span>
+                <span class="type-pill">WEBP</span>
+              </div>
+            </div>
+            <div id="upload-preview" style="display:none;"></div>
+          </div>
+          <div class="form-group" style="margin-top:14px;">
+            <label>הערות נוספות ל-Claude (אופציונלי)</label>
+            <textarea id="f-notes-upload" rows="2" placeholder="למשל: תתמקד בנקודות החשמל בסלון ובמטבח, יש מזגנים בכל חדר..."></textarea>
+          </div>
+          <hr>
+          <button class="btn btn-gold btn-full" id="gen-btn-upload" onclick="generateFromFile()">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 1L9.5 6H14L10.5 9L12 14L8 11L4 14L5.5 9L2 6H6.5L8 1Z" fill="#1a2e44"></path></svg>
+            נתח תוכנית עם Claude AI
+          </button>
+        </div>
+
+        <!-- MANUAL MODE -->
+        <div id="mode-manual" style="display:none;">
+          <div class="form-grid">
+            <div class="form-group">
+              <label>סוג הנכס</label>
+              <select id="f-type"><option value="">בחר...</option><option>דירה</option><option>וילה / בית פרטי</option><option>משרד / מסחרי</option><option>מבנה תעשייתי</option></select>
+            </div>
+            <div class="form-group">
+              <label>אמפראז׳ ראשי</label>
+              <select id="f-amp"><option value="">בחר...</option><option>25A</option><option>40A</option><option>63A</option><option>100A</option></select>
+            </div>
+            <div class="form-group"><label>שטח (מ"ר)</label><input id="f-area" type="number" placeholder="120"></div>
+            <div class="form-group"><label>קומות</label><input id="f-floors" type="number" placeholder="1"></div>
+            <div class="form-group"><label>נקודות חשמל</label><input id="f-points" type="number" placeholder="40"></div>
+            <div class="form-group"><label>חדרים</label><input id="f-rooms" type="number" placeholder="4"></div>
+            <div class="form-group full"><label>הערות מיוחדות</label><textarea id="f-notes" rows="2" placeholder="מזגנים, לוח חכם, מטען לרכב חשמלי..."></textarea></div>
+          </div>
+          <hr>
+          <button class="btn btn-gold btn-full" id="gen-btn" onclick="generateManual()">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 1L9.5 6H14L10.5 9L12 14L8 11L4 14L5.5 9L2 6H6.5L8 1Z" fill="#1a2e44"></path></svg>
+            צור תוכנית עם Claude AI
+          </button>
+        </div>
+
+        <!-- SHARED RESULT -->
+        <div id="ai-result-wrap" style="display:none;">
+          <div id="progress-wrap" class="progress-wrap" style="display:none;">
+            <div class="progress-label"><span id="progress-msg">מעבד...</span><span id="progress-pct">0%</span></div>
+            <div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
+          </div>
+          <div class="ai-result" id="ai-result"></div>
+          <div style="display:flex;gap:10px;margin-top:14px;">
+            <button class="btn btn-primary" id="save-btn" onclick="saveProject()" style="flex:1;" disabled="">שמור ל-Supabase</button>
+            <button class="btn btn-outline" onclick="resetForm()">נקה</button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- SETTINGS -->
+    <div id="screen-settings" class="screen">
+      <div class="page-header"><div class="page-title">הגדרות</div><div class="page-sub">חיבור Supabase ו-Claude</div></div>
+      <div class="card">
+        <div class="card-title">מפתחות API</div>
+        <div class="form-group"><label>Supabase URL</label><input id="s-url" type="text" placeholder="https://xxxx.supabase.co" dir="ltr"></div>
+        <div class="form-group"><label>Supabase Anon Key</label><input id="s-key" type="password" placeholder="eyJhbGci..." dir="ltr"></div>
+        <div class="form-group"><label>שם החברה</label><input id="s-company" type="text" placeholder="חשמל כהן בע&quot;מ"></div>
+        <button class="btn btn-primary" onclick="saveSettings()">שמור</button>
+        <div id="settings-msg" style="margin-top:10px;font-size:13px;"></div>
+      </div>
+      <div class="card">
+        <div class="card-title">SQL לטבלת Supabase</div>
+        <pre style="background:#f4f4f0;border-radius:8px;padding:14px;font-size:12px;overflow-x:auto;direction:ltr;text-align:left;">create table projects (
+  id uuid default gen_random_uuid() primary key,
+  created_at timestamptz default now(),
+  name text not null,
+  type text, area integer, floors integer,
+  points integer, rooms integer,
+  amperage text, notes text,
+  ai_plan text, total_cost integer,
+  source text
+);</pre>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- CONFIG MODAL -->
+<div class="modal-overlay" id="config-modal">
+  <div class="modal">
+    <div class="modal-title">הגדרת מפתחות</div>
+    <div class="modal-sub">מפתחות נשמרים רק על המחשב שלך</div>
+    <div class="form-group"><label>Supabase URL</label><input id="m-url" type="text" placeholder="https://xxxx.supabase.co" dir="ltr"></div>
+    <div class="form-group"><label>Supabase Anon Key</label><input id="m-key" type="password" placeholder="eyJhbGci..." dir="ltr"></div>
+    <div class="form-group"><label>שם החברה</label><input id="m-company" type="text" placeholder="חשמל כהן בע&quot;מ"></div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeConfig()">ביטול</button>
+      <button class="btn btn-primary" onclick="saveConfig()">שמור והתחל</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const STORAGE_KEY = 'elecplan_config';
+let config = { url: '', key: '', company: 'חברת החשמל שלי' };
+let lastAiPlan = '', lastTotalCost = 0, currentMode = 'upload';
+let uploadedFileB64 = null, uploadedFileType = null;
+
+function loadConfig() {
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) {
+      config = JSON.parse(saved);
+      document.getElementById('company-name').textContent = config.company || 'חברת החשמל שלי';
+      if (config.url && config.key) { document.getElementById('config-banner').style.display = 'none'; loadDashboard(); }
+      document.getElementById('s-url').value = config.url || '';
+      document.getElementById('s-key').value = config.key || '';
+      document.getElementById('s-company').value = config.company || '';
+    }
+  } catch(e) {}
+}
+function saveSettings() {
+  config.url = document.getElementById('s-url').value.trim();
+  config.key = document.getElementById('s-key').value.trim();
+  config.company = document.getElementById('s-company').value.trim() || 'חברת החשמל שלי';
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(config));
+  document.getElementById('company-name').textContent = config.company;
+  if (config.url && config.key) document.getElementById('config-banner').style.display = 'none';
+  document.getElementById('settings-msg').innerHTML = '<span style="color:green;">✓ נשמר</span>';
+}
+function openConfig() { document.getElementById('config-modal').classList.add('open'); }
+function closeConfig() { document.getElementById('config-modal').classList.remove('open'); }
+function saveConfig() {
+  config.url = document.getElementById('m-url').value.trim();
+  config.key = document.getElementById('m-key').value.trim();
+  config.company = document.getElementById('m-company').value.trim() || 'חברת החשמל שלי';
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(config));
+  document.getElementById('company-name').textContent = config.company;
+  if (config.url && config.key) document.getElementById('config-banner').style.display = 'none';
+  closeConfig(); loadDashboard();
+}
+
+function nav(screen) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('screen-' + screen).classList.add('active');
+  const map = { dashboard:0, projects:1, 'new-project':2, settings:3 };
+  document.querySelectorAll('.nav-item')[map[screen]]?.classList.add('active');
+  if (screen === 'projects') loadProjects();
+  if (screen === 'dashboard') loadDashboard();
+}
+
+function setMode(mode, btn) {
+  currentMode = mode;
+  document.querySelectorAll('.mode-tab').forEach(t => t.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('mode-upload').style.display = mode === 'upload' ? 'block' : 'none';
+  document.getElementById('mode-manual').style.display = mode === 'manual' ? 'block' : 'none';
+  document.getElementById('ai-result-wrap').style.display = 'none';
+}
+
+function handleDrop(e) {
+  e.preventDefault();
+  document.getElementById('upload-zone').classList.remove('drag');
+  if (e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]);
+}
+
+function handleFile(file) {
+  if (!file) return;
+  const allowed = ['application/pdf','image/jpeg','image/jpg','image/png','image/webp'];
+  if (!allowed.includes(file.type)) { alert('סוג קובץ לא נתמך. השתמש ב-PDF, JPG, PNG או WEBP.'); return; }
+  if (file.size > 20 * 1024 * 1024) { alert('הקובץ גדול מדי — מקסימום 20MB.'); return; }
+
+  uploadedFileType = file.type === 'image/jpg' ? 'image/jpeg' : file.type;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    uploadedFileB64 = e.target.result.split(',')[1];
+    const zone = document.getElementById('upload-zone');
+    zone.classList.add('has-file');
+    document.getElementById('upload-placeholder').style.display = 'none';
+    const preview = document.getElementById('upload-preview');
+    preview.style.display = 'block';
+    let html = `<div class="file-preview">
+      <div class="file-icon"><svg viewBox="0 0 18 18" fill="none"><path d="M4 2h7l4 4v10a1 1 0 01-1 1H4a1 1 0 01-1-1V3a1 1 0 011-1z" stroke="white" stroke-width="1.2"/><path d="M11 2v4h4" stroke="white" stroke-width="1.2"/></svg></div>
+      <div><div class="file-name">${file.name}</div><div class="file-size">${(file.size/1024).toFixed(0)} KB · ${file.type.includes('pdf') ? 'PDF' : 'תמונה'}</div></div>
+      <button class="file-remove" onclick="removeFile()">הסר</button>
+    </div>`;
+    if (file.type.startsWith('image/')) {
+      html += `<img src="${e.target.result}" class="img-preview" alt="תצוגה מקדימה"/>`;
+    }
+    preview.innerHTML = html;
+  };
+  reader.readAsDataURL(file);
+}
+
+function removeFile() {
+  uploadedFileB64 = null; uploadedFileType = null;
+  document.getElementById('upload-zone').classList.remove('has-file');
+  document.getElementById('upload-placeholder').style.display = 'block';
+  document.getElementById('upload-preview').style.display = 'none';
+  document.getElementById('upload-preview').innerHTML = '';
+  document.getElementById('file-input').value = '';
+}
+
+function setProgress(pct, msg) {
+  document.getElementById('progress-fill').style.width = pct + '%';
+  document.getElementById('progress-pct').textContent = pct + '%';
+  document.getElementById('progress-msg').textContent = msg;
+}
+
+function buildFilePrompt(name, notes) {
+  return `אתה מהנדס חשמל מוסמך בישראל עם 20 שנות ניסיון. קיבלת תוכנית בניין לפרויקט: "${name}".
+${notes ? 'הערות: ' + notes : ''}
+
+נתח את התוכנית בקפידה והפק את הדוח הבא בעברית:
+
+📐 פרטי הנכס שזיהית:
+- סוג נכס: [מה שאתה רואה]
+- שטח משוער: [אם ניתן]
+- מספר חדרים: [ספור]
+- קומות: [זיהוי]
+
+🔌 נקודות חשמל לפי חדרים:
+[לכל חדר מזוהה:]
+- [שם חדר]: [X שקעים, X מפסקים, X נק' תאורה, X נק' מיוחדות]
+
+🔧 רשימת חומרים מלאה:
+[10-15 פריטים לפחות:]
+- [שם חומר]: [כמות] [יחידה]
+
+⚡ לוח חשמל:
+- אמפראז' מומלץ: [X]A
+- מספר מעגלים: [X]
+- סוגי מעגלים: [רשימה]
+
+💰 הערכת עלויות:
+- חומרים: [XX,XXX] ₪
+- עבודה: [XX,XXX] ₪
+- שונות (10%): [X,XXX] ₪
+- סה"כ: [XX,XXX] ₪
+
+⏱ זמן ביצוע: [X ימים]
+👷 צוות מומלץ: [X חשמלאים]
+⚠️ נקודות לתשומת לב: [2-3 הערות חשובות מהתוכנית]`;
+}
+
+async function generateFromFile() {
+  if (!uploadedFileB64) { alert('אנא העלה קובץ תוכנית.'); return; }
+  const name = document.getElementById('f-name').value || 'פרויקט';
+  const notes = document.getElementById('f-notes-upload').value;
+
+  const btn = document.getElementById('gen-btn-upload');
+  btn.disabled = true;
+  btn.innerHTML = '<div class="dots"><span></span><span></span><span></span></div> Claude מנתח...';
+
+  document.getElementById('ai-result-wrap').style.display = 'block';
+  document.getElementById('progress-wrap').style.display = 'block';
+  document.getElementById('ai-result').className = 'ai-result loading';
+  document.getElementById('ai-result').textContent = 'קורא את קובץ התוכנית...';
+  document.getElementById('save-btn').disabled = true;
+
+  setProgress(15, 'מעלה קובץ ל-Claude...');
+
+  const isImage = uploadedFileType.startsWith('image/');
+  const contentBlock = isImage
+    ? { type: 'image', source: { type: 'base64', media_type: uploadedFileType, data: uploadedFileB64 } }
+    : { type: 'document', source: { type: 'base64', media_type: 'application/pdf', data: uploadedFileB64 } };
+
+  setTimeout(() => setProgress(40, 'Claude בוחן את התוכנית...'), 600);
+  setTimeout(() => setProgress(65, 'מפיק רשימת חומרים...'), 2000);
+  setTimeout(() => setProgress(85, 'מחשב עלויות...'), 4000);
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 2000,
+        messages: [{ role: 'user', content: [contentBlock, { type: 'text', text: buildFilePrompt(name, notes) }] }]
+      })
+    });
+    if (!res.ok) throw new Error('שגיאת Claude API (' + res.status + ')');
+    const data = await res.json();
+    lastAiPlan = data.content.map(b => b.text || '').join('');
+    const costMatch = lastAiPlan.match(/סה"כ[^0-9]*([0-9,]+)/);
+    if (costMatch) lastTotalCost = parseInt(costMatch[1].replace(/,/g,''));
+
+    setProgress(100, 'הושלם!');
+    setTimeout(() => { document.getElementById('progress-wrap').style.display = 'none'; }, 900);
+    document.getElementById('ai-result').className = 'ai-result';
+    document.getElementById('ai-result').textContent = lastAiPlan;
+    document.getElementById('save-btn').disabled = false;
+  } catch(e) {
+    document.getElementById('progress-wrap').style.display = 'none';
+    document.getElementById('ai-result').className = 'ai-result error';
+    document.getElementById('ai-result').textContent = 'שגיאה: ' + e.message;
+  }
+
+  btn.disabled = false;
+  btn.innerHTML = '<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 1L9.5 6H14L10.5 9L12 14L8 11L4 14L5.5 9L2 6H6.5L8 1Z" fill="#1a2e44"/></svg> נתח תוכנית עם Claude AI';
+}
+
+async function generateManual() {
+  const name=document.getElementById('f-name').value||'פרויקט';
+  const btn=document.getElementById('gen-btn');
+  btn.disabled=true;
+  btn.innerHTML='<div class="dots"><span></span><span></span><span></span></div> Claude עובד...';
+  document.getElementById('ai-result-wrap').style.display='block';
+  document.getElementById('ai-result').className='ai-result loading';
+  document.getElementById('ai-result').textContent='בונה תוכנית חשמל...';
+  document.getElementById('save-btn').disabled=true;
+
+  const prompt=`אתה מהנדס חשמל מוסמך בישראל. צור תוכנית חשמל עבור:
+שם: ${name}, סוג: ${document.getElementById('f-type').value||'לא צוין'}, שטח: ${document.getElementById('f-area').value||'?'} מ"ר, קומות: ${document.getElementById('f-floors').value||1}, נקודות: ${document.getElementById('f-points').value||'?'}, חדרים: ${document.getElementById('f-rooms').value||'?'}, אמפראז': ${document.getElementById('f-amp').value||'לא צוין'}, הערות: ${document.getElementById('f-notes').value||'אין'}
+
+ענה בפורמט:
+📋 סיכום תוכנית: [2-3 משפטים]
+🔧 רשימת חומרים עיקריים:
+- [שם]: [כמות] [יחידה]
+[6-8 פריטים]
+💰 הערכת עלויות:
+- חומרים: [X,XXX] ₪
+- עבודה: [X,XXX] ₪
+- שונות (10%): [X,XXX] ₪
+- סה"כ: [XX,XXX] ₪
+⏱ זמן ביצוע: [X ימים]
+👷 צוות מומלץ: [X חשמלאים]`;
+
+  try {
+    const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1200,messages:[{role:'user',content:prompt}]})});
+    if(!res.ok) throw new Error('שגיאת API ('+res.status+')');
+    const data=await res.json();
+    lastAiPlan=data.content.map(b=>b.text||'').join('');
+    const m=lastAiPlan.match(/סה"כ[^0-9]*([0-9,]+)/);
+    if(m) lastTotalCost=parseInt(m[1].replace(/,/g,''));
+    document.getElementById('ai-result').className='ai-result';
+    document.getElementById('ai-result').textContent=lastAiPlan;
+    document.getElementById('save-btn').disabled=false;
+  } catch(e) {
+    document.getElementById('ai-result').className='ai-result error';
+    document.getElementById('ai-result').textContent='שגיאה: '+e.message;
+  }
+  btn.disabled=false;
+  btn.innerHTML='<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 1L9.5 6H14L10.5 9L12 14L8 11L4 14L5.5 9L2 6H6.5L8 1Z" fill="#1a2e44"/></svg> צור תוכנית עם Claude AI';
+}
+
+async function saveProject() {
+  const btn=document.getElementById('save-btn');
+  btn.disabled=true; btn.textContent='שומר...';
+  try {
+    await sbFetch('projects',{method:'POST',prefer:'return=minimal',body:JSON.stringify({
+      name:document.getElementById('f-name').value||'פרויקט',
+      type:currentMode==='manual'?document.getElementById('f-type').value:'מתוכנית',
+      area:currentMode==='manual'?(parseInt(document.getElementById('f-area').value)||null):null,
+      floors:currentMode==='manual'?(parseInt(document.getElementById('f-floors').value)||null):null,
+      points:currentMode==='manual'?(parseInt(document.getElementById('f-points').value)||null):null,
+      rooms:currentMode==='manual'?(parseInt(document.getElementById('f-rooms').value)||null):null,
+      amperage:currentMode==='manual'?document.getElementById('f-amp').value:null,
+      notes:currentMode==='manual'?document.getElementById('f-notes').value:document.getElementById('f-notes-upload').value,
+      ai_plan:lastAiPlan, total_cost:lastTotalCost||null,
+      source:currentMode==='upload'?'קובץ תוכנית':'מילוי ידני'
+    })});
+    btn.textContent='✓ נשמר!'; btn.style.background='#065f46';
+    setTimeout(()=>{resetForm();nav('projects');},1400);
+  } catch(e) {
+    btn.disabled=false; btn.textContent='שגיאה — נסה שוב'; btn.style.background='#991b1b';
+  }
+}
+
+function resetForm() {
+  ['f-name','f-area','f-floors','f-points','f-rooms','f-notes','f-notes-upload'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  document.getElementById('f-type').value=''; document.getElementById('f-amp').value='';
+  document.getElementById('ai-result-wrap').style.display='none';
+  document.getElementById('save-btn').style.background=''; document.getElementById('save-btn').textContent='שמור ל-Supabase';
+  removeFile(); lastAiPlan=''; lastTotalCost=0;
+}
+
+async function sbFetch(path,opts={}) {
+  if(!config.url||!config.key) throw new Error('מפתחות לא מוגדרים');
+  const res=await fetch(config.url+'/rest/v1/'+path,{...opts,headers:{'apikey':config.key,'Authorization':'Bearer '+config.key,'Content-Type':'application/json','Prefer':opts.prefer||'return=representation',...(opts.headers||{})}});
+  if(!res.ok) throw new Error('Supabase error: '+res.status);
+  const text=await res.text(); return text?JSON.parse(text):[];
+}
+
+async function loadDashboard() {
+  try {
+    const data=await sbFetch('projects?select=id,created_at,name,type,total_cost,source&order=created_at.desc&limit=50');
+    document.getElementById('stat-total').textContent=data.length;
+    const now=new Date();
+    document.getElementById('stat-this-month').textContent=data.filter(p=>{const d=new Date(p.created_at);return d.getMonth()===now.getMonth()&&d.getFullYear()===now.getFullYear();}).length;
+    const tv=data.reduce((s,p)=>s+(p.total_cost||0),0);
+    document.getElementById('stat-value').textContent=tv>0?tv.toLocaleString('he-IL'):'—';
+    const recent=data.slice(0,5);
+    document.getElementById('dash-recent').innerHTML=recent.length===0
+      ?'<div class="empty"><div class="empty-icon">📋</div>אין פרויקטים עדיין</div>'
+      :'<table class="proj-table"><thead><tr><th>שם</th><th>מקור</th><th>עלות</th></tr></thead><tbody>'+
+        recent.map(p=>`<tr><td><div class="proj-name">${p.name}</div></td><td><span class="badge ${p.source==='קובץ תוכנית'?'badge-gold':'badge-navy'}">${p.source||'—'}</span></td><td>${p.total_cost?p.total_cost.toLocaleString('he-IL')+' ₪':'—'}</td></tr>`).join('')+'</tbody></table>';
+  } catch(e) { document.getElementById('dash-recent').innerHTML='<div class="empty">לא ניתן לטעון — בדוק הגדרות</div>'; }
+}
+
+async function loadProjects() {
+  document.getElementById('projects-table-wrap').innerHTML='<div class="empty">טוען...</div>';
+  try {
+    const data=await sbFetch('projects?select=*&order=created_at.desc');
+    document.getElementById('projects-table-wrap').innerHTML=data.length===0
+      ?'<div class="empty"><div class="empty-icon">📂</div>אין פרויקטים</div>'
+      :'<table class="proj-table"><thead><tr><th>שם</th><th>סוג</th><th>מקור</th><th>שטח</th><th>עלות</th><th>תאריך</th></tr></thead><tbody>'+
+        data.map(p=>`<tr><td><div class="proj-name">${p.name}</div></td><td>${p.type||'—'}</td><td><span class="badge ${p.source==='קובץ תוכנית'?'badge-gold':'badge-navy'}">${p.source||'—'}</span></td><td>${p.area?p.area+' מ"ר':'—'}</td><td>${p.total_cost?p.total_cost.toLocaleString('he-IL')+' ₪':'—'}</td><td style="font-size:12px;color:var(--muted)">${new Date(p.created_at).toLocaleDateString('he-IL')}</td></tr>`).join('')+'</tbody></table>';
+  } catch(e) { document.getElementById('projects-table-wrap').innerHTML='<div class="empty">שגיאה: '+e.message+'</div>'; }
+}
+
+loadConfig();
+
+function toggleSidebar() {
+  const sidebar = document.getElementById('sidebar');
+  const overlay = document.getElementById('sidebar-overlay');
+  const btn = document.getElementById('hamburger');
+  const isOpen = sidebar.classList.contains('open');
+  if (isOpen) { closeSidebar(); } else {
+    sidebar.classList.add('open');
+    overlay.classList.add('open');
+    btn.classList.add('open');
+  }
+}
+
+function closeSidebar() {
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('sidebar-overlay').classList.remove('open');
+  document.getElementById('hamburger').classList.remove('open');
+}
+
+const _nav = nav;
+nav = function(screen) {
+  _nav(screen);
+  if (window.innerWidth <= 700) closeSidebar();
+};
+</script>
+
+
+</body></html>
